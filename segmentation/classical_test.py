@@ -89,8 +89,6 @@ def check_ratio(hull):
 
 def hull_seg(hulls):
     merged = True
-    largest_hull = None
-
     while merged:
         merged = False
         largest_hull = None
@@ -117,7 +115,7 @@ def hull_seg(hulls):
                     new_hulls.append(hull)
         new_hulls.append(tmp_hull)
         hulls = new_hulls
-    return [largest_hull]
+    return [tmp_hull]
 
 
 for img in images:
