@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.widgets import Slider
 import os
+from scipy.spatial import ConvexHull
+
+from segmentation import utils
+from segmentation.utils import hull_seg, process_image
 
 images = os.listdir('set')
 images = [os.path.join('set', img) for img in images]
@@ -60,65 +64,52 @@ def contour_image(image):
     plt.show()
 
 
-def compute_aspect_ratio(hull):
-    x, y, w, h = cv2.boundingRect(hull)
-    aspect_ratio = h / w
-    return aspect_ratio
+# for img in images:
+#     img_cv = cv2.imread(img)
+#     img_cv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
+#     contour_image(img_cv)
+
+def draw_circle(image, center, radius, color=(255, 255, 255), thickness=2):
+    """
+    Draws a circle on the given image.
+
+    Args:
+        image (np.ndarray): The image on which to draw the circle.
+        center (tuple): (x, y) coordinates of the circle center.
+        radius (int): Radius of the circle.
+        color (tuple): Color of the circle in (B, G, R). Default is white.
+        thickness (int): Thickness of the circle border. Use -1 for a filled circle.
+
+    Returns:
+        np.ndarray: Image with the circle drawn.
+    """
+    return cv2.circle(image, center, radius, color, thickness)
 
 
-def merge_two_hulls(hull1, hull2):
-    combined_points = np.concatenate((hull1, hull2), axis=0)
-    return cv2.convexHull(combined_points)
+# Create a blank image
+mug_img = cv2.imread('set/MUG2.jpg')
 
+image = np.zeros_like(mug_img)
+mug_object = process_image(mug_img)
+print(mug_img.shape)
+# Define the center and radius
+center = mug_img.shape[1] // 2 +0, mug_img.shape[0] // 2
+print(center)
+radius = 100
 
-def min_distance(hull1, hull2):
-    # TODO: OPTIMIZE
-    min_dist = float('inf')
-    for point1 in hull1:
-        for point2 in hull2:
-            dist = np.linalg.norm(point1 - point2)
-            if dist < min_dist:
-                min_dist = dist
-    return min_dist
+# Draw the circle on the image
+image_with_circle = draw_circle(image, center, radius, color=(0, 255, 0), thickness=3)
+grip_angle, similarity = 0, 0
+for hull in mug_object:
+    cv2.drawContours(image_with_circle, [hull], -1, 255, thickness=1)
+    grip_angle, similarity = utils.find_best_angle(ConvexHull(hull.squeeze()), center, radius)
+# Convert from BGR to RGB for matplotlib
+image_with_circle_rgb = cv2.cvtColor(image_with_circle, cv2.COLOR_BGR2RGB)
 
-
-def check_ratio(hull):
-    ratio = compute_aspect_ratio(hull)
-    return min_ratio < ratio < (1 / min_ratio)
-
-
-def hull_seg(hulls):
-    merged = True
-    while merged:
-        merged = False
-        largest_hull = None
-        largest_area = -1
-        for hull in hulls:
-            area = cv2.contourArea(hull)
-            if area > largest_area and check_ratio(hull):
-                largest_area = area
-                largest_hull = hull
-
-        if largest_area == -1:
-            break
-
-        new_hulls = []
-        tmp_hull = largest_hull
-        for hull in hulls:
-            if not np.array_equal(largest_hull, hull):
-                ret, _ = cv2.intersectConvexConvex(tmp_hull, hull)
-                d = min_distance(tmp_hull, hull)
-                if ret > 0 or d < max_dist:
-                    if check_ratio(hull):
-                        tmp_hull = merge_two_hulls(tmp_hull, hull)
-                else:
-                    new_hulls.append(hull)
-        new_hulls.append(tmp_hull)
-        hulls = new_hulls
-    return [tmp_hull]
-
-
-for img in images:
-    img_cv = cv2.imread(img)
-    img_cv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
-    contour_image(img_cv)
+cv2.line(image_with_circle_rgb, center,
+         np.round(center + radius * np.array([np.cos(grip_angle), np.sin(grip_angle)])).astype(int),
+         (255, 0, 0), 5)
+# Display using matplotlib
+plt.imshow(image_with_circle_rgb)
+plt.axis("off")  # Hide axes
+plt.show()
