@@ -88,12 +88,12 @@ def draw_circle(image, center, radius, color=(255, 255, 255), thickness=2):
 
 # Create a blank image
 mug_img = cv2.imread('set/MUG2.jpg')
-
+start = time.time()
 image = np.zeros_like(mug_img)
 mug_object = process_image(mug_img)
 print(mug_img.shape)
 # Define the center and radius
-center = mug_img.shape[1] // 2 +0, mug_img.shape[0] // 2
+center = mug_img.shape[1] // 2+30, mug_img.shape[0] // 2
 print(center)
 radius = 100
 
@@ -103,6 +103,9 @@ grip_angle, similarity = 0, 0
 for hull in mug_object:
     cv2.drawContours(image_with_circle, [hull], -1, 255, thickness=1)
     grip_angle, similarity = utils.find_best_angle(ConvexHull(hull.squeeze()), center, radius)
+end = time.time()
+print(str(end - start) + 's')
+
 # Convert from BGR to RGB for matplotlib
 image_with_circle_rgb = cv2.cvtColor(image_with_circle, cv2.COLOR_BGR2RGB)
 

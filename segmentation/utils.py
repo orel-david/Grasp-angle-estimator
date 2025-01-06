@@ -149,19 +149,18 @@ def angle_heuristic(angle):
 
 
 def in_hull(p, hull: ConvexHull):
-    from scipy.spatial import Delaunay
-    hull = Delaunay(hull.points)
-
     return hull.find_simplex(p) >= 0
 
 
 def find_best_angle(hull, center, radius):
+    from scipy.spatial import Delaunay
+    del_hull = Delaunay(hull.points)
     best_angle = 0
     best_similarity = float('-inf')
-    for angle in range(-180, 15, 15):
+    for angle in range(-215, 15, 15):
         angle_radians = angle * np.pi / 180
         normal = np.array([np.cos(angle_radians), np.sin(angle_radians)])
-        if in_hull(center + radius * normal, hull):
+        if in_hull(center + radius * normal, del_hull):
             continue
 
         p, d, hull_normal = project_point_hull(hull, normal)
