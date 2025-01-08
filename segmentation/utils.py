@@ -173,3 +173,7 @@ def find_best_angle(hull, center, radius):
             best_similarity = similarity
 
     return best_angle, best_similarity
+
+
+def sample_hull(hull, sample_size=3):
+    return hull.squeeze()[np.random.choice(hull.shape[0], size=sample_size)]

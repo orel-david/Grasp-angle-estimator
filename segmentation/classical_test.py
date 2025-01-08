@@ -70,19 +70,6 @@ def contour_image(image):
 #     contour_image(img_cv)
 
 def draw_circle(image, center, radius, color=(255, 255, 255), thickness=2):
-    """
-    Draws a circle on the given image.
-
-    Args:
-        image (np.ndarray): The image on which to draw the circle.
-        center (tuple): (x, y) coordinates of the circle center.
-        radius (int): Radius of the circle.
-        color (tuple): Color of the circle in (B, G, R). Default is white.
-        thickness (int): Thickness of the circle border. Use -1 for a filled circle.
-
-    Returns:
-        np.ndarray: Image with the circle drawn.
-    """
     return cv2.circle(image, center, radius, color, thickness)
 
 
@@ -103,6 +90,7 @@ grip_angle, similarity = 0, 0
 for hull in mug_object:
     cv2.drawContours(image_with_circle, [hull], -1, 255, thickness=1)
     grip_angle, similarity = utils.find_best_angle(ConvexHull(hull.squeeze()), center, radius)
+
 end = time.time()
 print(str(end - start) + 's')
 
