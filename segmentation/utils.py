@@ -12,9 +12,9 @@ from scipy.spatial import ConvexHull
 initial_sigma = 1
 initial_threshold1 = 50
 initial_threshold2 = 150
-kernel = np.ones((3, 3), np.uint8)
-min_ratio = 0.3
-max_dist = 10
+kernel = np.ones((5, 5), np.uint8)
+min_ratio = 0.25
+max_dist = 30
 
 
 def blur(gray_image):
@@ -43,14 +43,8 @@ def process_image(image):
     for contour in contours:
         hull = cv2.convexHull(contour)
         hulls.append(hull)
-    modified_hulls = hull_seg(hulls)
+    modified_hulls = hull_seg(hulls, gray_image.shape)
     return modified_hulls
-
-
-def compute_aspect_ratio(hull):
-    x, y, w, h = cv2.boundingRect(hull)
-    aspect_ratio = h / w
-    return aspect_ratio
 
 
 def merge_two_hulls(hull1, hull2):
@@ -68,12 +62,31 @@ def min_distance(hull1, hull2):
     return min_dist
 
 
-def check_ratio(hull):
-    ratio = compute_aspect_ratio(hull)
-    return min_ratio < ratio < (1 / min_ratio)
+def check_ratio(hull: np.ndarray):
+    rect = cv2.minAreaRect(hull)
+    w, h = rect[1]
+    if w==0 or h==0:
+        return False
+    aspect_ratio = w / h
+    return min_ratio < aspect_ratio < (1 / min_ratio)
 
 
-def hull_seg(hulls):
+def hull_in_center(hull, img_shape):
+    height, width = img_shape
+    left_boundary = width / 4
+    right_boundary = 3 * width / 4
+    center_mass, dim, angle = cv2.minAreaRect(hull)
+    x, y = center_mass
+
+    # Check if the hull bounds are within the middle third
+    x_condition = left_boundary <= x <= right_boundary
+    left_boundary = height / 4
+    right_boundary = 3 * height / 4
+    y_condition = left_boundary <= y <= right_boundary
+    return x_condition
+
+
+def hull_seg(hulls, img_shape):
     merged = True
     while merged:
         merged = False
@@ -84,7 +97,6 @@ def hull_seg(hulls):
             if area > largest_area and check_ratio(hull):
                 largest_area = area
                 largest_hull = hull
-
         if largest_area == -1:
             break
 
@@ -94,9 +106,19 @@ def hull_seg(hulls):
             if not np.array_equal(largest_hull, hull):
                 ret, _ = cv2.intersectConvexConvex(tmp_hull, hull)
                 d = min_distance(tmp_hull, hull)
-                if ret > 0 or d < max_dist:
-                    if check_ratio(hull):
+                if ret > 0:
+                    if check_ratio(hull) and hull_in_center(hull, img_shape):
                         tmp_hull = merge_two_hulls(tmp_hull, hull)
+                elif d < max_dist:
+                    if check_ratio(hull) and hull_in_center(hull, img_shape):
+                        rect = cv2.minAreaRect(hull)
+                        w, h = rect[1]
+                        if w == 0 or h == 0:
+                            return False
+                        aspect_ratio = w / h
+                        print(aspect_ratio)
+                        tmp_hull = merge_two_hulls(tmp_hull, hull)
+
                 else:
                     new_hulls.append(hull)
         new_hulls.append(tmp_hull)
