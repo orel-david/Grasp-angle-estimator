@@ -10,13 +10,13 @@ from scipy.spatial import ConvexHull
 from segmentation import utils
 from segmentation.utils import hull_seg, process_image
 
-images = os.listdir('set')
-images = [os.path.join('set', img) for img in images]
+images = os.listdir('seq')
+images = [os.path.join('seq', img) for img in images]
 # Initial parameters
 initial_sigma = 1
 initial_threshold1 = 50
 initial_threshold2 = 150
-kernel = np.ones((3, 3), np.uint8)
+kernel = np.ones((5, 5), np.uint8)
 min_ratio = 0.1
 max_dist = 10
 
@@ -64,12 +64,12 @@ def contour_image(image):
     plt.show()
 
 
-# for img in images:
-#     img_cv = cv2.imread(img)
-#     img_cv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
-#     contour_image(img_cv)
-#
-# exit()
+for img in images:
+    img_cv = cv2.imread(img)
+    img_cv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
+    contour_image(img_cv)
+
+exit()
 def draw_circle(image, center, radius, color=(255, 255, 255), thickness=2):
     return cv2.circle(image, center, radius, color, thickness)
 
@@ -84,7 +84,7 @@ mug_object = process_image(mug_img)
 end = time.time()
 print(str(end - start) + 's')
 # Define the center and radius
-center = mug_img.shape[1] // 2 + 40, mug_img.shape[0] // 2
+center = mug_img.shape[1] // 2 , mug_img.shape[0] // 2
 radius = 100
 
 # Draw the circle on the image

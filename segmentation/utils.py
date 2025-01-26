@@ -115,8 +115,6 @@ def hull_seg(hulls, img_shape):
                         w, h = rect[1]
                         if w == 0 or h == 0:
                             return False
-                        aspect_ratio = w / h
-                        print(aspect_ratio)
                         tmp_hull = merge_two_hulls(tmp_hull, hull)
 
                 else:
@@ -179,7 +177,7 @@ def find_best_angle(hull, center, radius):
     del_hull = Delaunay(hull.points)
     best_angle = 0
     best_similarity = float('-inf')
-    for angle in range(-215, 15, 15):
+    for angle in range(-180, 15, 15):
         angle_radians = angle * np.pi / 180
         normal = np.array([np.cos(angle_radians), np.sin(angle_radians)])
         if in_hull(center + radius * normal, del_hull):
