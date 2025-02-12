@@ -1,5 +1,6 @@
 #include "esp_camera.h"
 #include <WiFi.h>
+#include "utils.h"
 
 // Replace with your network credentials
 const char* ssid = "OrelDavid";
@@ -56,8 +57,10 @@ void startCamera() {
 
   // Set frame size and buffer
   config.frame_size = FRAMESIZE_QVGA; // 320x240 resolution
-  config.jpeg_quality = 5;         
-  config.fb_count = 2;
+  config.jpeg_quality = 10;         
+  config.fb_count = 1;
+  config.pixel_format = PIXFORMAT_GRAYSCALE;
+
 
 
   // Initialize the camera
@@ -134,6 +137,8 @@ void setup() {
   startCamera();
   startWiFi();
   Serial.println("hi");
+  Serial.print("norm sanity check: ");
+  Serial.println(norm(1, 2)); 
 
 }
 
