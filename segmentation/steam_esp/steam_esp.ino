@@ -1,6 +1,7 @@
 #include "esp_camera.h"
 #include <WiFi.h>
 #include "utils.h"
+#include "fb_gfx.h"
 
 // Replace with your network credentials
 const char* ssid = "OrelDavid";
@@ -57,7 +58,7 @@ void startCamera() {
 
   // Set frame size and buffer
   config.frame_size = FRAMESIZE_QVGA; // 320x240 resolution
-  config.jpeg_quality = 10;         
+  config.jpeg_quality = 5;         
   config.fb_count = 1;
   config.pixel_format = PIXFORMAT_GRAYSCALE;
 
@@ -113,24 +114,59 @@ void handleClient() {
   while (client.connected()) {
     camera_fb_t *fb = esp_camera_fb_get();
     if (!fb) {
-      Serial.println("Camera capture failed");
-      continue;
+        Serial.println("Camera capture failed");
+        continue;
+    }
+
+    uint8_t *jpg_buf = nullptr;
+    size_t jpg_buf_len = 0;
+    int width = fb->width;
+    int height = fb->height;
+
+    // Create an output buffer for the processed image
+    uint8_t* output = (uint8_t*)malloc(width * height);
+    uint8_t* temp = (uint8_t*)malloc(width * height);
+
+    // Apply Gaussian blur
+    unsigned long start_time = millis();
+
+    gaussian_blur(fb->buf, temp, width, height);
+    opening(temp, output, width, height); // expensive might remove for perfomrence
+    unsigned long end_time = millis();
+    Serial.println("Execution Time: " + String(end_time - start_time) + " ms");
+    // Convert to JPEG if grayscale TODO REMOVE AFTER DEBUG
+    if (fb->format == PIXFORMAT_GRAYSCALE) {
+        if (!fmt2jpg(output, fb->len, width, height, PIXFORMAT_GRAYSCALE, 80, &jpg_buf, &jpg_buf_len)) {
+            Serial.println("JPEG encoding failed");
+            esp_camera_fb_return(fb);
+            continue;
+        }
+    } else {
+        // Use the original JPEG buffer
+        jpg_buf = fb->buf;
+        jpg_buf_len = fb->len;
     }
 
     // Send the frame in MJPEG format
     client.println("--frame");
     client.println("Content-Type: image/jpeg");
-    client.println("Content-Length: " + String(fb->len));
+    client.println("Content-Length: " + String(jpg_buf_len));
     client.println();
-    client.write(fb->buf, fb->len);
+    client.write(jpg_buf, jpg_buf_len);
     client.println();
+
+    // Free the allocated buffer if grayscale conversion was done
+    if (fb->format == PIXFORMAT_GRAYSCALE) {
+        free(jpg_buf);
+    }
+    free(temp);
+    free(output);
 
     esp_camera_fb_return(fb);
 
     // Delay to control frame rate
     delay(delayBetweenFrames);
-  }
-}
+}}
 
 void setup() {
   Serial.begin(115200);
@@ -139,7 +175,6 @@ void setup() {
   Serial.println("hi");
   Serial.print("norm sanity check: ");
   Serial.println(norm(1, 2)); 
-
 }
 
 void loop() {

@@ -36,8 +36,8 @@ def blur(gray_image):
 def process_image(image):
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blurred_image = cv2.GaussianBlur(gray_image, (3, 3), initial_sigma)
-    opening = cv2.morphologyEx(blurred_image, cv2.MORPH_OPEN, kernel)
-    edges = cv2.Canny(opening, initial_threshold1, initial_threshold2)
+    # opening = cv2.morphologyEx(blurred_image, cv2.MORPH_OPEN, kernel)
+    edges = cv2.Canny(blurred_image, initial_threshold1, initial_threshold2)
     contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     hulls = []
     for contour in contours:
@@ -65,7 +65,7 @@ def min_distance(hull1, hull2):
 def check_ratio(hull: np.ndarray):
     rect = cv2.minAreaRect(hull)
     w, h = rect[1]
-    if w==0 or h==0:
+    if w == 0 or h == 0:
         return False
     aspect_ratio = w / h
     return min_ratio < aspect_ratio < (1 / min_ratio)
@@ -197,3 +197,14 @@ def find_best_angle(hull, center, radius):
 
 def sample_hull(hull, sample_size=3):
     return hull.squeeze()[np.random.choice(hull.shape[0], size=sample_size)]
+
+print(cv2.GaussianBlur(np.array([[0, 0, 0],
+                  [0, 100, 0],
+                  [0, 0, 00]], dtype=np.uint8), (3, 3), 1))
+kernel = cv2.getGaussianKernel(3, 1.0)
+
+# Convert to 2D kernel by multiplying it by its transpose
+kernel_2d = kernel @ kernel.T
+
+# Print the 3x3 kernel
+print(kernel_2d)
