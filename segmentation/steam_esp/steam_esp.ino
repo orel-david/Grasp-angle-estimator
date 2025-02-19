@@ -7,10 +7,6 @@
 const char* ssid = "OrelDavid";
 const char* password = "12345678";
 
-// Define the frames per second (FPS)
-const int fps = 10; // Adjust as needed
-const int delayBetweenFrames = 1000 / fps;
-
 // Camera pin configuration (for AI Thinker module)
 #define PWDN_GPIO_NUM  32
 #define RESET_GPIO_NUM -1
@@ -112,6 +108,7 @@ void handleClient() {
   client.println();
 
   while (client.connected()) {
+
     camera_fb_t *fb = esp_camera_fb_get();
     if (!fb) {
         Serial.println("Camera capture failed");
@@ -127,13 +124,16 @@ void handleClient() {
     uint8_t* output = (uint8_t*)malloc(width * height);
     uint8_t* temp = (uint8_t*)malloc(width * height);
 
+
     // Apply Gaussian blur
     unsigned long start_time = millis();
 
-    gaussian_blur(fb->buf, temp, width, height);
-    opening(temp, output, width, height); // expensive might remove for perfomrence
+    gaussian_blur(fb->buf, temp);
+    canny(temp, output, 50, 150);
+    extract_contours(output);
     unsigned long end_time = millis();
     Serial.println("Execution Time: " + String(end_time - start_time) + " ms");
+
     // Convert to JPEG if grayscale TODO REMOVE AFTER DEBUG
     if (fb->format == PIXFORMAT_GRAYSCALE) {
         if (!fmt2jpg(output, fb->len, width, height, PIXFORMAT_GRAYSCALE, 80, &jpg_buf, &jpg_buf_len)) {
@@ -163,9 +163,6 @@ void handleClient() {
     free(output);
 
     esp_camera_fb_return(fb);
-
-    // Delay to control frame rate
-    delay(delayBetweenFrames);
 }}
 
 void setup() {
