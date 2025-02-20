@@ -75,7 +75,7 @@ void startCamera() {
 
     // Change exposure settings
   sensor->set_exposure_ctrl(sensor, 1); // Enable automatic exposure control
-  sensor->set_aec_value(sensor, 300); // Manually set exposure value (0-1200)
+  sensor->set_aec_value(sensor, 500); // Manually set exposure value (0-1200)
 }
 
 void startWiFi() {
@@ -121,7 +121,7 @@ void handleClient() {
     int height = fb->height;
 
     // Create an output buffer for the processed image
-    uint8_t* output = (uint8_t*)malloc(width * height);
+    uint8_t* output = (uint8_t*) calloc(width * height, sizeof(uint8_t));
     uint8_t* temp = (uint8_t*)malloc(width * height);
 
 
@@ -129,7 +129,9 @@ void handleClient() {
     unsigned long start_time = millis();
 
     gaussian_blur(fb->buf, temp);
-    canny(temp, output, 50, 150);
+    gaussian_blur(temp, fb->buf);
+
+    canny(fb->buf, output, 50, 150);
     extract_contours(output);
     unsigned long end_time = millis();
     Serial.println("Execution Time: " + String(end_time - start_time) + " ms");
@@ -163,7 +165,8 @@ void handleClient() {
     free(output);
 
     esp_camera_fb_return(fb);
-}}
+  }
+}
 
 void setup() {
   Serial.begin(115200);

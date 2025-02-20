@@ -1,5 +1,7 @@
 #include "utils.h"
 #include <cmath>
+#include <Arduino.h>
+
 #define HEIGHT 240
 #define WIDTH 320
 
@@ -19,6 +21,7 @@ const int SOBEL_Y[3][3] = {
   { 1,  2,  1}
 };
 
+std::queue<std::pair<int, int>> candidates;
 
 uint8_t max(uint8_t a, uint8_t b)
 {
@@ -150,8 +153,8 @@ void opening(uint8_t *input, uint8_t *output, int width, int height)
 
 
 void sobelFilter(uint8_t *input, uint8_t* grad, uint8_t* angle){
-  for (int y = 1; y < HEIGHT - 1; y++) {
-    for (int x = 1; x < WIDTH - 1; x++) {
+  for (int y = 3; y < HEIGHT - 3; y++) {
+    for (int x = 3; x < WIDTH - 3; x++) {
       int gx = (-input[(y-1)*WIDTH + (x-1)] - 2*input[y*WIDTH + (x-1)] - input[(y+1)*WIDTH + (x-1)]) +
                     ( input[(y-1)*WIDTH + (x+1)] + 2*input[y*WIDTH + (x+1)] + input[(y+1)*WIDTH + (x+1)]);
 
@@ -171,8 +174,7 @@ void sobelFilter(uint8_t *input, uint8_t* grad, uint8_t* angle){
 void nonMaximumSuppression(uint8_t* grad, uint8_t* direction, uint8_t* output) {
   for (int y = 1; y < HEIGHT - 1; y++) {
       for (int x = 1; x < WIDTH - 1; x++) {
-          uint8_t angle = direction[y*WIDTH + x] * (180.0 / M_PI);
-          angle = (angle < 0) ? angle + 180 : angle;
+          uint8_t angle = direction[y*WIDTH + x];
 
           uint8_t q = 255, r = 255;
           if ((0 <= angle < 22.5) || (157.5 <= angle <= 180)) {
@@ -201,12 +203,15 @@ void nonMaximumSuppression(uint8_t* grad, uint8_t* direction, uint8_t* output) {
 void doubleThreshold(uint8_t* input, uint8_t* output, int low, int high){
   for (int y = 1; y < HEIGHT - 1; y++) {
     for (int x = 1; x < WIDTH - 1; x++) {
-      if (input[y*WIDTH + x] >= high)
+      if (input[y*WIDTH + x] >= high){
+        candidates.push({x,y});
         output[y*WIDTH + x] = 255;
-      else if (input[y*WIDTH + x] >= low)
+    }else if (input[y*WIDTH + x] >= low){
         output[y*WIDTH + x] = 128;
-      else
+    }
+      else{
         output[y*WIDTH + x] = 0;
+      }
     }
   }
 
@@ -219,6 +224,7 @@ void doubleThreshold(uint8_t* input, uint8_t* output, int low, int high){
             output[(y+1)*WIDTH + x-1] == 255 || output[(y+1)*WIDTH + x] == 255 || output[(y+1)*WIDTH + x+1] == 255)
        {
           output[y*WIDTH + x] = 255;
+          candidates.push({x,y});
         } else {
           output[y*WIDTH + x] = 0;
         }
@@ -230,17 +236,17 @@ void doubleThreshold(uint8_t* input, uint8_t* output, int low, int high){
 void canny(uint8_t *input, uint8_t *output, int low, int high)
 {
   // We assume blurred input
-  uint8_t* grad = (uint8_t*) malloc(WIDTH * HEIGHT);
+  uint8_t* grad = (uint8_t*) calloc(WIDTH * HEIGHT, sizeof(uint8_t));
   uint8_t* angle = (uint8_t*) malloc(WIDTH * HEIGHT);
-  uint8_t* temp = (uint8_t*)malloc(WIDTH * HEIGHT);
+  uint8_t* temp = (uint8_t*) calloc(WIDTH * HEIGHT, sizeof(uint8_t));
   if (!grad || !angle || !input || !temp) {
     // TODO Handle it better
     return;
 }
 
   sobelFilter(input, grad, angle);
-  nonMaximumSuppression(grad, angle, temp);
-  doubleThreshold(temp, output, low, high);
+  // nonMaximumSuppression(grad, angle, temp);
+  doubleThreshold(grad, output, low, high);
   free(temp);
   free(grad);
   free(angle);
@@ -282,28 +288,21 @@ void findContour(int startX, int startY, uint8_t* image, std::vector<std::vector
 
 
 // require fixing
-void extract_contours(uint8_t* image)
+std::vector<std::vector<std::pair<int, int>>> extract_contours(uint8_t* image)
 {
   std::vector<std::vector<bool>> visited(HEIGHT, std::vector<bool>(WIDTH, false));
   std::vector<std::vector<std::pair<int, int>>> contours;
 
-  // Start contour extraction
-  for (int y = 5; y < HEIGHT-5; ++y) {
-      for (int x = 5; x < WIDTH-5; ++x) {
-          if (image[y*WIDTH + x] == 255 && !visited[y][x]) {
-              std::vector<std::pair<int, int>> contour;
-              findContour(x, y, image, visited, contour);
-              contours.push_back(contour);
-          }
+  while(!candidates.empty())
+  {
+      auto [x, y] = candidates.front();
+      candidates.pop();
+      if (!visited[y][x]){
+      std::vector<std::pair<int, int>> contour;
+      findContour(x, y, image, visited, contour);
+      contours.push_back(contour);
       }
   }
 
-      // Print contours
-  // for (size_t i = 0; i < contours.size(); ++i) {
-  //       std::cout << "Contour " << i + 1 << ": ";
-  //       for (size_t j = 0; j < contours[i].size(); ++j) {
-  //           std::cout << "(" << contours[i][j].first << ", " << contours[i][j].second << ") ";
-  //       }
-  //       std::cout << std::endl;
-  //   }
+  return contours;
 }
