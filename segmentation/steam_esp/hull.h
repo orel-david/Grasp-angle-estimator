@@ -346,6 +346,40 @@ struct Hull
     }
 
 
+    bool isInside(const Point& p) const
+    {
+        int n = this->points.size();
+        Point C = this->getCenter();
+        for(int i=0; i < n; i++)
+        {
+            int next = (i+1) % n;
+            Point A = this->points[i];
+            Point B = this->points[next];
+            double detA = cross(A, B ,p);
+            double detB = cross(B, C, p);
+            double detC = cross(C, A, p);
+
+            bool hasNeg = false;
+            bool hasPos = false;
+
+            if(detA > 0 || detB > 0 || detC > 0)
+            {
+                hasPos = true;
+            }
+
+            if(detA < 0 || detB < 0 || detC < 0)
+            {
+                hasNeg = true;
+            }
+
+            if (!(hasNeg & hasPos))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 };
 
 #endif
