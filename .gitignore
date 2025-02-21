@@ -1,3 +1,7 @@
 
 *.xml
 *.iml
+*.json
+*.json
+/segmentation/steam_esp/output
+*.exe

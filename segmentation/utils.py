@@ -114,7 +114,7 @@ def hull_seg(hulls, img_shape):
                         rect = cv2.minAreaRect(hull)
                         w, h = rect[1]
                         if w == 0 or h == 0:
-                            return False
+                            continue
                         tmp_hull = merge_two_hulls(tmp_hull, hull)
 
                 else:

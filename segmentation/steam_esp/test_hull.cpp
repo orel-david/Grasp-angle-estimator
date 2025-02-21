@@ -31,16 +31,22 @@ int main() {
     //     points.push_back({x, y});
     // }
 
-    int numPoints = 50000;
+    int numPoints = 500;
     int xRange = 100;
     int yRange = 100;
+
+    std::vector<Point> rect = {{0, 0}, {1, 1}, {0, 2}, {-1, 1}};
+
 
     vector<pair<int, int>> randp = generateRandomPoints(numPoints, xRange, yRange);
 
     auto start = high_resolution_clock::now();
-
-    // Compute the convex hullS
-    Hull hull = Hull(randp);
+    Circle mec = minCircle({ { 5, -2 }, {-3,-2}, {-2,5}, {1, 6}, {0,2}});
+    cout << mec.center.x << " " << mec.center.y <<" "<< mec.r<< std::endl;
+    // double minArea = minBoundingRectangleArea(rect);
+    // std::cout << "Minimum Area Bounding Rectangle: " << minArea << "\n";
+    // // Compute the convex hullS
+    // Hull hull = Hull(randp);
     auto end = high_resolution_clock::now();
 
     // Calculate the elapsed time

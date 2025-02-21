@@ -2,32 +2,222 @@
 #define HULL_H
 #include <vector>
 #include <iostream>
+#include <random>
 #include <cmath>
 #include <algorithm>
 
+
 struct Point {
-    int x, y;
+    double x, y;
 
     Point(int x, int y) : x(x), y(y) {}
+
+    Point(double x, double y) : x(x), y(y) {}
+
 
 
     bool operator<(const Point& p) const {
         return (x == p.x) ? y < p.y : x < p.x;
     }
+
+    Point operator-(const Point& other) const {
+        return Point(x - other.x, y - other.y);
+    }
 };
+
 
 int cross(const Point& o, const Point& a, const Point& b) {
     return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
 }
 
+
+double dot(const Point& a, const Point& b) {
+    return a.x * b.x + a.y * b.y;
+}
+
+
+double norm(const Point& a) {
+    return std::sqrt(a.x * a.x + a.y * a.y);
+}
+
+
+double cosineSimilarity(const Point& a, const Point& b) {
+    double norm_a = norm(a);
+    double norm_b = norm(b);
+
+    if (norm_a == 0 || norm_b == 0) {
+        return 0;
+    }
+
+    return dot(a, b) / (norm_a * norm_b);
+}
+
+struct Circle
+{
+    Point center;
+    double r;
+};
+
+
+bool isInside(const Circle& c, const Point& p) {
+    return norm(c.center - p) <= c.r;
+}
+
+
+Point getCircleCenter(double bx, double by, double cx, double cy) {
+    double b = bx * bx + by * by;
+    double c = cx * cx + cy * cy;
+    double d = bx * cy - by * cx;
+    return { (cy * b - by * c) / (2 * d), (bx * c - cx * b) / (2 * d) };
+}
+
+
+Circle circleFrom(const Point& a, const Point& b,   const Point& c) {
+    Point i = getCircleCenter(b.x - a.x, b.y - a.y, c.x - a.x, c.y - a.y);
+
+    i.x += a.x;
+    i.y += a.y;
+    return { i, norm(i - a) };
+}
+
+
+Circle circleFrom(const Point& a, const Point& b) {
+
+    // Set the center to be the midpoint of a and b
+    Point c = { (a.x + b.x) / 2.0, (a.y + b.y) / 2.0 };
+
+    return {c, norm(a - b) / 2.0 };
+}
+
+
+bool isValidCircle(const Circle& c, const std::vector<Point>& points) {
+    for (const Point& p : points){
+        if (!isInside(c, p)){
+            return false;
+        }
+    }
+    return true;
+}
+
+
+Circle minCircleHelper(std::vector<Point>& p, std::vector<Point> r, int n) {
+
+    // Base case when all points processed or |r| = 3
+    if (n == 0 || r.size() == 3) {
+        if (r.empty()) {
+            return { { 0, 0 }, 0 };
+        }
+        else if (r.size() == 1) {
+            return {r[0], 0};
+        }
+        else if (r.size() == 2) {
+            return circleFrom(r[0], r[1]);
+        }
+    
+        // check for a pair that contains the third point
+        for (int i = 0; i < 3; i++) {
+            for (int j = i + 1; j < 3; j++) {
+    
+                Circle c = circleFrom(r[i], r[j]);
+                if (isValidCircle(c, r))
+                    return c;
+            }
+        }
+        return circleFrom(r[0], r[1], r[2]);
+    }
+
+    // Pick a random point randomly
+    int idx = rand() % n;
+    Point pnt = p[idx];
+
+    // Put the picked point at the end of p
+    // since it's more efficient than
+    // deleting from the middle of the vector
+    std::swap(p[idx], p[n - 1]);
+
+    // Get the MEC circle d from the
+    // set of points p - {p}
+    Circle d = minCircleHelper(p, r, n - 1);
+
+    // If d contains pnt, return d
+    if (isInside(d, pnt)) {
+        return d;
+    }
+
+    // Otherwise, must be on the boundary of the MEC
+    r.push_back(pnt);
+
+    // Return the MEC for p - {p} and r U {p}
+    return minCircleHelper(p, r, n - 1);
+}
+
+
+Circle minCircle(const std::vector<Point>& p) {
+    std::vector<Point> pCopy = p;
+    std::random_device rd;
+    std::mt19937 g(rd()); 
+
+    std::shuffle(pCopy.begin(), pCopy.end(), g);
+    return minCircleHelper(pCopy, {}, pCopy.size());
+}
+
+
+double minBoundingRectangleArea(const std::vector<Point>& hull) {
+    int n = hull.size();
+    if (n < 3) return 0; // No valid rectangle
+
+    double minArea = 1e20;
+
+    for (int i = 0; i < n; i++) {
+        int base = (i+1) %n;
+        Point p1 = hull[i];
+        Point p2 = hull[base];
+        Point u0 = Point(p2.x - p1.x, p2.y-p1.y);
+        double uNorm = norm(u0);
+        u0.x = u0.x/uNorm;
+        u0.y = u0.y/uNorm;
+        Point u1 = Point(-u0.y, u0.x);
+        Point support[4] = {{0, 0}, {0, 0}, {0, 0}, {0, 0}}; 
+        
+        for(int j = 0; j < n; j++)
+        {
+            Point diff = hull[j] - p2;
+            Point v = {dot(u0, diff), dot(u1, diff)};
+
+            if(v.x > support[1].x || (v.x == support[1].x && v.y > support[1].y))
+            {
+                support[1] = v;
+            }
+            
+            if (v.y > support[2].y || (v.y == support[2].y && v.x < support[2].x))
+            {
+                support[2] = v;
+            }
+
+            if(v.x < support[3].x || (v.x == support[3].x && v.y < support[3].y))
+            {
+                support[3] = v;
+            }
+        }
+        double area = (support[1].x - support[3].x) * (support[2].y - support[0].y);
+
+        if (area < minArea)
+        {
+            minArea = area;
+        }
+    }
+
+    return minArea;
+}
+
 struct Hull
 {
     std::vector<Point> points;
-    int center_x;
-    int center_y;
+    double center_x;
+    double center_y;
     int area_rect;
     int area_circ;
-    int area;
+    double area;
     float aspect_ratio;
 
     Hull(std::vector<std::pair<int,int>> in_points): center_x(-1), 
@@ -39,11 +229,12 @@ struct Hull
     }
 
     void print() const {
-        std::cout << "Hull " << ": " << std::endl;
+        std::cout << "Hull" << ": " << std::endl;
         for (size_t i = 0; i < points.size(); ++i) {
             std::cout << "(" << points[i].x << ", " << points[i].y << ") ";
             std::cout << std::endl;
         }
+        std::cout<< "Area: " << this->area<< " center: (" << this->center_x<< ", "<< this->center_y<< ")" << std::endl;
     }
 
 
@@ -81,7 +272,30 @@ struct Hull
 
     void initAreaCenter()
     {
-        //TODO
+        double A = 0;
+        double CX = 0;
+        double CY = 0;
+        int n = this->points.size();
+
+        for (int i = 0; i < n; i++)
+        {
+            Point p1 = this->points[i];
+            Point p2 = this->points[(i+1) % (n)];
+            double det = p1.x * p2.y - p2.x * p1.y;
+            A += det;
+            CX += det * (p1.x + p2.x);
+            CY += det * (p1.y + p2.y);
+        }
+        A = 0.5 * std::abs(A);
+        CX = CX / (6*A);
+        CY = CY / (6*A);
+        this->area = A;
+        this->center_x = CX;
+        this->center_y = CY;
+    }
+
+    bool operator<(const Hull& h) const {
+        return this->area < h.area;
     }
 };
 
