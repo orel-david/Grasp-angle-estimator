@@ -162,11 +162,13 @@ Circle minCircle(const std::vector<Point>& p) {
 }
 
 
-double minBoundingRectangleArea(const std::vector<Point>& hull) {
+std::pair<double, double> minBoundingRectangleAreaAndRatio(const std::vector<Point>& hull) {
     int n = hull.size();
-    if (n < 3) return 0; // No valid rectangle
+    if (n < 3) return {0,0}; // No valid rectangle
+
 
     double minArea = 1e20;
+    int w,h =0;
 
     for (int i = 0; i < n; i++) {
         int base = (i+1) %n;
@@ -204,21 +206,37 @@ double minBoundingRectangleArea(const std::vector<Point>& hull) {
         if (area < minArea)
         {
             minArea = area;
+            w = (support[1].x - support[3].x);
+            h = (support[2].y - support[0].y);
         }
     }
 
-    return minArea;
+    double ratio;
+    if(w == 0 || h == 0)
+    {
+        ratio = 0;
+    }
+    else
+    {
+        ratio = w / h;
+    }
+
+    return {minArea, ratio};
 }
 
 struct Hull
 {
+    private:
     std::vector<Point> points;
     double center_x;
     double center_y;
-    int area_rect;
-    int area_circ;
+    double area_rect;
+    double area_circ;
     double area;
     float aspect_ratio;
+    int valid; // lazy evaluation for validity
+    // valid values: -1 unevaluated, 0 non valid, 1 ratio valid
+    bool inCenter; 
 
     Hull(std::vector<std::pair<int,int>> in_points): center_x(-1), 
         center_y(-1), area_rect(-1), area_circ(-1), area(-1), aspect_ratio(-1)
@@ -295,8 +313,39 @@ struct Hull
     }
 
     bool operator<(const Hull& h) const {
-        return this->area < h.area;
+        return this->area < h.getArea();
     }
+
+    std::vector<Point> getPoints() const
+    {
+        return this->points;
+    }
+
+    Point getCenter() const
+    {
+        return {this->center_x, this->center_y};
+    }
+
+    double getArea() const
+    {
+        return this->area;
+    }
+
+    double getRectArea() 
+    {
+        // Gets the min bounding rect area
+        if(this->area_rect == -1)
+        {
+            pair<double, double> temp = minBoundingRectangleAreaAndRatio(this->getPoints());
+            this->area_rect = temp.first;
+            this->aspect_ratio = temp.second;
+            return temp.first;
+        }
+
+        return this->area_rect;
+    }
+
+
 };
 
 #endif
