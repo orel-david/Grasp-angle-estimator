@@ -23,6 +23,19 @@ const int SOBEL_Y[3][3] = {
 
 std::queue<std::pair<int, int>> candidates;
 
+uint8_t* imageFromHulls(const std::vector<Hull>& hulls) {
+  uint8_t* output = (uint8_t*) calloc(WIDTH * HEIGHT, sizeof(uint8_t));
+  if (!output) return nullptr; 
+
+  for (const Hull& h : hulls) { 
+      for (const Point& p : h.getPoints()) { 
+          output[int(p.y) * WIDTH + int(p.x)] = 255; 
+      }
+  }
+
+  return output;
+}
+
 uint8_t max(uint8_t a, uint8_t b)
 {
     if(a<b)
@@ -288,10 +301,10 @@ void findContour(int startX, int startY, uint8_t* image, std::vector<std::vector
 
 
 // require fixing
-std::vector<std::vector<std::pair<int, int>>> extract_contours(uint8_t* image)
+std::vector<Hull> extract_hulls(uint8_t* image)
 {
   std::vector<std::vector<bool>> visited(HEIGHT, std::vector<bool>(WIDTH, false));
-  std::vector<std::vector<std::pair<int, int>>> contours;
+  std::vector<Hull> hulls;
 
   while(!candidates.empty())
   {
@@ -300,9 +313,10 @@ std::vector<std::vector<std::pair<int, int>>> extract_contours(uint8_t* image)
       if (!visited[y][x]){
       std::vector<std::pair<int, int>> contour;
       findContour(x, y, image, visited, contour);
-      contours.push_back(contour);
+      Hull hull = Hull(contour);
+      hulls.push_back(hull);
       }
   }
 
-  return contours;
+  return hulls;
 }

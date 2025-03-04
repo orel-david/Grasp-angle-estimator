@@ -120,25 +120,18 @@ void handleClient() {
     int width = fb->width;
     int height = fb->height;
 
-    // Create an output buffer for the processed image
-    uint8_t* output = (uint8_t*) calloc(width * height, sizeof(uint8_t));
-    uint8_t* temp = (uint8_t*)malloc(width * height);
+
 
 
     // Apply Gaussian blur
     unsigned long start_time = millis();
 
-    gaussian_blur(fb->buf, temp);
-    gaussian_blur(temp, fb->buf);
-
-    canny(fb->buf, output, 50, 150);
-    extract_contours(output);
     unsigned long end_time = millis();
     Serial.println("Execution Time: " + String(end_time - start_time) + " ms");
 
     // Convert to JPEG if grayscale TODO REMOVE AFTER DEBUG
     if (fb->format == PIXFORMAT_GRAYSCALE) {
-        if (!fmt2jpg(output, fb->len, width, height, PIXFORMAT_GRAYSCALE, 80, &jpg_buf, &jpg_buf_len)) {
+        if (!fmt2jpg(fb->buf, fb->len, width, height, PIXFORMAT_GRAYSCALE, 80, &jpg_buf, &jpg_buf_len)) {
             Serial.println("JPEG encoding failed");
             esp_camera_fb_return(fb);
             continue;
@@ -161,8 +154,7 @@ void handleClient() {
     if (fb->format == PIXFORMAT_GRAYSCALE) {
         free(jpg_buf);
     }
-    free(temp);
-    free(output);
+
 
     esp_camera_fb_return(fb);
   }
