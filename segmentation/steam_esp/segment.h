@@ -6,7 +6,7 @@
 #include "hull.h"
 #include "utils.h"
 
-Hull segment(uint8_t* input, int width, int height);
+std::vector<Hull> segment(uint8_t* input, int width, int height);
 
 
 

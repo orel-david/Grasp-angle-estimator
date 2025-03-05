@@ -214,6 +214,10 @@ std::vector<Point> Hull::convexHull(std::vector<std::pair<int,int>>& in)
 {
     std::vector<Point> points;
     points.reserve(in.size());
+    if(in.size() == 0)
+    {
+      return points;
+    }
 
     for (const auto& p : in) {
         points.emplace_back(p.first, p.second);
@@ -248,7 +252,13 @@ void Hull::initAreaCenter()
     double CX = 0;
     double CY = 0;
     int n = this->points.size();
-
+    if(n==0)
+    {
+      this->area = 0;
+      this->center_x = 0;
+      this->center_y = 0;
+      return;
+    }
     for (int i = 0; i < n; i++)
     {
         Point p1 = this->points[i];
@@ -268,6 +278,24 @@ void Hull::initAreaCenter()
 
 bool Hull::operator<(const Hull& h) const {
     return this->area < h.getArea();
+}
+
+Hull Hull::operator+(const Hull &h) const
+{
+    std::vector<std::pair<int,int>> points;
+    std::vector<Point> in_p = h.getPoints();
+    points.reserve(this->points.size() + in_p.size());
+    for (const auto& p: this->points)
+    {
+        points.emplace_back(p.x, p.y);
+    }
+
+    for (const auto& p: in_p)
+    {
+        points.emplace_back(p.x, p.y);
+    }
+    Hull result = Hull(points);
+    return result;
 }
 
 const std::vector<Point>& Hull::getPoints() const
@@ -297,6 +325,21 @@ double Hull::getRectArea()
     }
 
     return this->area_rect;
+}
+
+
+float Hull::getAspectRatio() 
+{
+    // Gets the min bounding rect area
+    if(this->area_rect == -1)
+    {
+        std::pair<double, double> temp = minBoundingRectangleAreaAndRatio(this->getPoints());
+        this->area_rect = temp.first;
+        this->aspect_ratio = temp.second;
+        return temp.second;
+    }
+
+    return this->aspect_ratio;
 }
 
 

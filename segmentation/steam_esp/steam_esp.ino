@@ -1,7 +1,9 @@
 #include "esp_camera.h"
 #include <WiFi.h>
 #include "utils.h"
+#include "segment.h"
 #include "fb_gfx.h"
+#include <cstring>
 
 // Replace with your network credentials
 const char* ssid = "OrelDavid";
@@ -125,13 +127,20 @@ void handleClient() {
 
     // Apply Gaussian blur
     unsigned long start_time = millis();
+    std::vector<Hull> hulls = segment(fb->buf, width, height);
 
     unsigned long end_time = millis();
+    uint8_t* output = imageFromHulls(hulls);
+    if(output == nullptr)
+    {
+      continue;
+    }
+
     Serial.println("Execution Time: " + String(end_time - start_time) + " ms");
 
     // Convert to JPEG if grayscale TODO REMOVE AFTER DEBUG
     if (fb->format == PIXFORMAT_GRAYSCALE) {
-        if (!fmt2jpg(fb->buf, fb->len, width, height, PIXFORMAT_GRAYSCALE, 80, &jpg_buf, &jpg_buf_len)) {
+        if (!fmt2jpg(output, fb->len, width, height, PIXFORMAT_GRAYSCALE, 80, &jpg_buf, &jpg_buf_len)) {
             Serial.println("JPEG encoding failed");
             esp_camera_fb_return(fb);
             continue;
@@ -154,7 +163,7 @@ void handleClient() {
     if (fb->format == PIXFORMAT_GRAYSCALE) {
         free(jpg_buf);
     }
-
+    free(output);
 
     esp_camera_fb_return(fb);
   }

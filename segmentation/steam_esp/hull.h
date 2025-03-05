@@ -13,6 +13,7 @@ struct Point {
     Point(int x, int y) : x(x), y(y) {}
 
     Point(double x, double y) : x(x), y(y) {}
+    ~Point() = default;
 
 
 
@@ -41,6 +42,8 @@ struct Circle
 {
     Point center;
     double r;
+    ~Circle() = default;
+
 };
 
 
@@ -83,7 +86,7 @@ struct Hull
 
     public:
     Hull(std::vector<std::pair<int,int>> in_points);
-
+    ~Hull() = default;
     void print() const;
 
 
@@ -93,6 +96,8 @@ struct Hull
     void initAreaCenter();
 
     bool operator<(const Hull& h) const;
+    Hull operator+(const Hull& h) const;
+
 
     const std::vector<Point>& getPoints() const;
 
@@ -100,7 +105,8 @@ struct Hull
     double getArea() const;
 
     double getRectArea();
-
+    float getAspectRatio();
+    
     bool isInside(const Point& p) const;
 };
 
