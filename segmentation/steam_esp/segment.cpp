@@ -92,7 +92,7 @@ std::vector<Hull> segment(uint8_t *input, int width, int height)
                 double dist = approxDist(tmp_hull, h);
                 if(dist < MAX_DIST && hullInCenter(h, width, height))
                 {
-                    merged = true;
+                    // merged = true;
                     tmp_hull = tmp_hull + h;
                 }else
                 {
@@ -108,7 +108,7 @@ std::vector<Hull> segment(uint8_t *input, int width, int height)
         newHulls.push_back(tmp_hull);
         hulls = newHulls;
         largestArea = tmp_hull.getArea();
-        largestHull = &tmp_hull;
+        largestHull = &tmp_hull; // problem
     }
     return {*largestHull};
 }

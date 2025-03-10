@@ -122,25 +122,39 @@ void handleClient() {
     int width = fb->width;
     int height = fb->height;
 
-
+    uint8_t* temp = (uint8_t*) calloc(2*width * height, sizeof(uint8_t));
 
 
     // Apply Gaussian blur
     unsigned long start_time = millis();
-    std::vector<Hull> hulls = segment(fb->buf, width, height);
+    for(int y = 0; y < height; y++)
+    {
+      for(int x = 0; x < width; x++)
+      {
+        temp[y * (2*width) + x] = (fb->buf)[y * width + x];  // Next two columns
 
+      }
+    }
+    std::vector<Hull> hulls = segment(fb->buf, width, height);
     unsigned long end_time = millis();
     uint8_t* output = imageFromHulls(hulls);
     if(output == nullptr)
     {
       continue;
     }
+    for(int y = 0; y < height; y++)
+    {
+      for(int x = 0; x < width; x++)
+      {
+        temp[y * (2*width) + x + width] = (output)[y * width + x];  // Next two columns
 
+      }
+    }
     Serial.println("Execution Time: " + String(end_time - start_time) + " ms");
 
     // Convert to JPEG if grayscale TODO REMOVE AFTER DEBUG
     if (fb->format == PIXFORMAT_GRAYSCALE) {
-        if (!fmt2jpg(output, fb->len, width, height, PIXFORMAT_GRAYSCALE, 80, &jpg_buf, &jpg_buf_len)) {
+        if (!fmt2jpg(temp, 2*fb->len, 2*width, height, PIXFORMAT_GRAYSCALE, 80, &jpg_buf, &jpg_buf_len)) {
             Serial.println("JPEG encoding failed");
             esp_camera_fb_return(fb);
             continue;
@@ -164,7 +178,7 @@ void handleClient() {
         free(jpg_buf);
     }
     free(output);
-
+    free(temp);
     esp_camera_fb_return(fb);
   }
 }
