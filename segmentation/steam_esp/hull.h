@@ -70,6 +70,8 @@ Circle minCircle(const std::vector<Point>& p);
 
 std::pair<double, double> minBoundingRectangleAreaAndRatio(const std::vector<Point>& hull);
 
+double angleFromOptical(const Point&p);
+
 struct Hull
 {
     private:

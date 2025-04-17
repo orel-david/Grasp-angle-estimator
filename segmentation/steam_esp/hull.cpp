@@ -1,5 +1,14 @@
 #include "hull.h"
 
+#define FOCAL_LENGTH 292 // in pixels, it is 3.21mm and pixel is 2.2 microns, adjusted to resolution
+
+int sign(double x)
+{
+  if(x < 0)
+    return -1;
+  return 1;
+}
+
 int cross(const Point& o, const Point& a, const Point& b) {
     return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
 }
@@ -191,7 +200,17 @@ std::pair<double, double> minBoundingRectangleAreaAndRatio(const std::vector<Poi
     return {minArea, ratio};
 }
 
+double angleFromOptical(const Point &p)
+{
+    // Return angle in radians.
+    
+    int dx = p.x - 160; //width is 320
+    int dy = p.y - 120; //height is 120
 
+    double dist = std::sqrt(dx*dx + dy*dy);
+
+    return std::atan(dist / FOCAL_LENGTH) * sign(dx);
+}
 
 Hull::Hull(std::vector<std::pair<int,int>> in_points): center_x(-1), 
         center_y(-1), area_rect(-1), area_circ(-1), area(-1), aspect_ratio(-1)

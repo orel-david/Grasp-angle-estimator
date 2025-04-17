@@ -7,11 +7,11 @@ from matplotlib.widgets import Slider
 import os
 from scipy.spatial import ConvexHull
 
-from segmentation import utils
-from segmentation.utils import hull_seg, process_image
+import utils
+from utils import hull_seg, process_image
 
-images = os.listdir('seq')
-images = [os.path.join('seq', img) for img in images]
+images = os.listdir('.\set')
+images = [os.path.join('.\set', img) for img in images]
 # Initial parameters
 initial_sigma = 1
 initial_threshold1 = 50

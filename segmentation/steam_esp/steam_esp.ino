@@ -10,23 +10,25 @@ const char* ssid = "OrelDavid";
 const char* password = "12345678";
 
 // Camera pin configuration (for AI Thinker module)
-#define PWDN_GPIO_NUM  32
+#define PWDN_GPIO_NUM 32
 #define RESET_GPIO_NUM -1
-#define XCLK_GPIO_NUM  0
-#define SIOD_GPIO_NUM  26
-#define SIOC_GPIO_NUM  27
+#define XCLK_GPIO_NUM 0
+#define SIOD_GPIO_NUM 26
+#define SIOC_GPIO_NUM 27
 
-#define Y9_GPIO_NUM    35
-#define Y8_GPIO_NUM    34
-#define Y7_GPIO_NUM    39
-#define Y6_GPIO_NUM    36
-#define Y5_GPIO_NUM    21
-#define Y4_GPIO_NUM    19
-#define Y3_GPIO_NUM    18
-#define Y2_GPIO_NUM    5
+#define Y9_GPIO_NUM 35
+#define Y8_GPIO_NUM 34
+#define Y7_GPIO_NUM 39
+#define Y6_GPIO_NUM 36
+#define Y5_GPIO_NUM 21
+#define Y4_GPIO_NUM 19
+#define Y3_GPIO_NUM 18
+#define Y2_GPIO_NUM 5
 #define VSYNC_GPIO_NUM 25
-#define HREF_GPIO_NUM  23
-#define PCLK_GPIO_NUM  22
+#define HREF_GPIO_NUM 23
+#define PCLK_GPIO_NUM 22
+#define TRIG_PIN 13
+#define ECHO_PIN 15
 
 WiFiServer server(80);
 
@@ -55,8 +57,8 @@ void startCamera() {
   config.pixel_format = PIXFORMAT_JPEG;
 
   // Set frame size and buffer
-  config.frame_size = FRAMESIZE_QVGA; // 320x240 resolution
-  config.jpeg_quality = 5;         
+  config.frame_size = FRAMESIZE_QVGA;  // 320x240 resolution
+  config.jpeg_quality = 5;
   config.fb_count = 1;
   config.pixel_format = PIXFORMAT_GRAYSCALE;
 
@@ -65,19 +67,20 @@ void startCamera() {
   // Initialize the camera
   if (esp_camera_init(&config) != ESP_OK) {
     Serial.println("Camera init failed");
-    while (1);
+    while (1)
+      ;
   }
-  sensor_t *sensor = esp_camera_sensor_get();
+  sensor_t* sensor = esp_camera_sensor_get();
 
-    // Check if sensor object is valid
+  // Check if sensor object is valid
   if (!sensor) {
     Serial.println("Failed to get sensor");
     return;
   }
 
-    // Change exposure settings
-  sensor->set_exposure_ctrl(sensor, 1); // Enable automatic exposure control
-  sensor->set_aec_value(sensor, 500); // Manually set exposure value (0-1200)
+  // Change exposure settings
+  sensor->set_exposure_ctrl(sensor, 1);  // Enable automatic exposure control
+  sensor->set_aec_value(sensor, 500);    // Manually set exposure value (0-1200)
 }
 
 void startWiFi() {
@@ -111,58 +114,61 @@ void handleClient() {
 
   while (client.connected()) {
 
-    camera_fb_t *fb = esp_camera_fb_get();
+    camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) {
-        Serial.println("Camera capture failed");
-        continue;
+      Serial.println("Camera capture failed");
+      continue;
     }
 
-    uint8_t *jpg_buf = nullptr;
+    uint8_t* jpg_buf = nullptr;
     size_t jpg_buf_len = 0;
     int width = fb->width;
     int height = fb->height;
 
-    uint8_t* temp = (uint8_t*) calloc(2*width * height, sizeof(uint8_t));
+    uint8_t* temp = (uint8_t*)calloc(2 * width * height, sizeof(uint8_t));
 
 
     // Apply Gaussian blur
     unsigned long start_time = millis();
-    for(int y = 0; y < height; y++)
-    {
-      for(int x = 0; x < width; x++)
-      {
-        temp[y * (2*width) + x] = (fb->buf)[y * width + x];  // Next two columns
-
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        temp[y * (2 * width) + x] = (fb->buf)[y * width + x];  // Next two columns
       }
     }
     std::vector<Hull> hulls = segment(fb->buf, width, height);
+
+    if (hulls.size() > 0) {
+      Hull h = hulls[0];
+      Serial.println(h.getCenter().x);
+            Serial.println(h.getCenter().y);
+
+      Serial.print("Angle of object from center(radians): ");
+      Serial.println(angleFromOptical(h.getCenter()));
+    }
+
     unsigned long end_time = millis();
     uint8_t* output = imageFromHulls(hulls);
-    if(output == nullptr)
-    {
+    if (output == nullptr) {
       continue;
     }
-    for(int y = 0; y < height; y++)
-    {
-      for(int x = 0; x < width; x++)
-      {
-        temp[y * (2*width) + x + width] = (output)[y * width + x];  // Next two columns
-
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        temp[y * (2 * width) + x + width] = (output)[y * width + x];  // Next two columns
       }
     }
     Serial.println("Execution Time: " + String(end_time - start_time) + " ms");
 
     // Convert to JPEG if grayscale TODO REMOVE AFTER DEBUG
     if (fb->format == PIXFORMAT_GRAYSCALE) {
-        if (!fmt2jpg(temp, 2*fb->len, 2*width, height, PIXFORMAT_GRAYSCALE, 80, &jpg_buf, &jpg_buf_len)) {
-            Serial.println("JPEG encoding failed");
-            esp_camera_fb_return(fb);
-            continue;
-        }
+      if (!fmt2jpg(temp, 2 * fb->len, 2 * width, height, PIXFORMAT_GRAYSCALE, 80, &jpg_buf, &jpg_buf_len)) {
+        Serial.println("JPEG encoding failed");
+        esp_camera_fb_return(fb);
+        continue;
+      }
     } else {
-        // Use the original JPEG buffer
-        jpg_buf = fb->buf;
-        jpg_buf_len = fb->len;
+      // Use the original JPEG buffer
+      jpg_buf = fb->buf;
+      jpg_buf_len = fb->len;
     }
 
     // Send the frame in MJPEG format
@@ -175,7 +181,7 @@ void handleClient() {
 
     // Free the allocated buffer if grayscale conversion was done
     if (fb->format == PIXFORMAT_GRAYSCALE) {
-        free(jpg_buf);
+      free(jpg_buf);
     }
     free(output);
     free(temp);
@@ -189,9 +195,30 @@ void setup() {
   startWiFi();
   Serial.println("hi");
   Serial.print("norm sanity check: ");
-  Serial.println(norm(1, 2)); 
+  Serial.println(norm(1, 2));
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
 }
 
 void loop() {
+  // digitalWrite(TRIG_PIN, LOW);
+  // delayMicroseconds(10);
+
+  // // Send a 10us pulse
+  // digitalWrite(TRIG_PIN, HIGH);
+  // delayMicroseconds(10);
+  // digitalWrite(TRIG_PIN, LOW);
+
+  // // Measure echo pulse width
+  // long duration = pulseIn(ECHO_PIN, HIGH);
+
+  // // Calculate distance in cm (speed of sound: ~34300 cm/s)
+  // float distance = duration * 0.0343 / 2;
+
+  // Serial.print("Distance: ");
+  // Serial.print(distance);
+  // Serial.println(" cm");
+
+
   handleClient();
 }
