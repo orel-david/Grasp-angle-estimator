@@ -18,6 +18,14 @@ max_dist = 30
 
 
 def blur(gray_image):
+    """Applies gaussian blur with emphasis on the center
+
+    Args:
+        gray_image: The image to be blurred
+
+    Returns:
+        The blurred image
+    """
     center_x, center_y = gray_image.shape[1] // 2, gray_image.shape[0] // 2
     radius = 150  # Radius of the clear area (adjust as needed)
 
@@ -34,6 +42,14 @@ def blur(gray_image):
 
 
 def process_image(image):
+    """ The main function that process the image
+
+    Args:
+        image: The original image
+
+    Returns:
+        Convex hull of the segmented object
+    """
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blurred_image = cv2.GaussianBlur(gray_image, (3, 3), initial_sigma)
     # opening = cv2.morphologyEx(blurred_image, cv2.MORPH_OPEN, kernel)
@@ -48,11 +64,29 @@ def process_image(image):
 
 
 def merge_two_hulls(hull1, hull2):
+    """ Connects two convex hull into one convex hull that containes both
+
+    Args:
+        hull1: First hull
+        hull2: Second Hull
+
+    Returns:
+        Merged convex hull
+    """
     combined_points = np.concatenate((hull1, hull2), axis=0)
     return cv2.convexHull(combined_points)
 
 
 def min_distance(hull1, hull2):
+    """ Returns the min distance between 2 convex hulls.
+
+    Args:
+        hull1: First hull
+        hull2: Second Hull
+
+    Returns:
+        The distance between the hulls
+    """
     min_dist = float('inf')
     for point1 in hull1:
         for point2 in hull2:
@@ -63,6 +97,14 @@ def min_distance(hull1, hull2):
 
 
 def check_ratio(hull: np.ndarray):
+    """ Check if the ratio between the height and the width of the object is reasonable
+
+    Args:
+        hull (np.ndarray): The Convex hull we check
+
+    Returns:
+        Whether it's ratios are valid for our usecase. (To filter noise in segmentation)
+    """
     rect = cv2.minAreaRect(hull)
     w, h = rect[1]
     if w == 0 or h == 0:
@@ -72,6 +114,15 @@ def check_ratio(hull: np.ndarray):
 
 
 def hull_in_center(hull, img_shape):
+    """ Check whether a convex hull is roughly in the middle of the image
+
+    Args:
+        hull: The convex hull
+        img_shape: The dimensions of the image
+
+    Returns:
+        Whether the hull's center of mass is in between the 1st to 3rd quarters of the width.
+    """
     height, width = img_shape
     left_boundary = width / 4
     right_boundary = 3 * width / 4
@@ -87,6 +138,15 @@ def hull_in_center(hull, img_shape):
 
 
 def hull_seg(hulls, img_shape):
+    """ Segment Convex hull from preproccessed image to the object estimated hull.
+
+    Args:
+        hulls: The convex hulls after canny edge detection
+        img_shape: The dimensions of the image
+
+    Returns:
+        The segmented hull inside an array.
+    """
     merged = True
     while merged:
         merged = False
@@ -125,6 +185,15 @@ def hull_seg(hulls, img_shape):
 
 
 def project_point_hull(hull: ConvexHull, p):
+    """ Project a 2d point onto it's closest point on a convex hull
+
+    Args:
+        hull (ConvexHull): The hull we project the point onto
+        p : The 2d point
+
+    Returns:
+        The projected point on the hull
+    """
     min_d = float('inf')
     closest_point = None
     normal = None
@@ -157,6 +226,15 @@ def project_point_hull(hull: ConvexHull, p):
 
 
 def cosine_similarity(A, B):
+    """Calculated Cosine Similarity between 2 vectors.
+
+    Args:
+        A: The first vector
+        B: The second vector
+
+    Returns:
+        The cosine similarity of A,B.
+    """
     dot_product = np.dot(A, B)
     norm_A = np.linalg.norm(A)
     norm_B = np.linalg.norm(B)
@@ -165,14 +243,42 @@ def cosine_similarity(A, B):
 
 
 def angle_heuristic(angle):
+    """A regularization heuristic to incentivize neutral angles (optimal would be 0 degrees relative to x axis or 180 degrees)
+
+    Args:
+        angle: The angle on which we return the heuristic
+
+    Returns:
+        The heuristic value for the given angle.
+    """
     return (abs(np.pi / 2 - (angle % np.pi)) - np.pi / 2) / np.pi
 
 
 def in_hull(p, hull: ConvexHull):
+    """ Returns whether a point is in the convex hull.
+
+    Args:
+        p: The point
+        hull (ConvexHull): The convex hull
+
+    Returns:
+        True if p is inside hull
+    """
     return hull.find_simplex(p) >= 0
 
 
 def find_best_angle(hull, center, radius):
+    """ Compares discrete set of angles and returns the one with the lowest angle heuristic+
+     +maximal simalrity of the angle with the normal of the object's convex hull. It is also requiring the angle to make sure the arm wont intersect the object.
+
+    Args:
+        hull: The object's convex hull
+        center (_type_): center of the arm
+        radius (_type_): The rotation radius of the arm
+
+    Returns:
+        The best angle out of the set.
+    """
     from scipy.spatial import Delaunay
     del_hull = Delaunay(hull.points)
     best_angle = 0
@@ -196,6 +302,15 @@ def find_best_angle(hull, center, radius):
 
 
 def sample_hull(hull, sample_size=3):
+    """ Sample points from a convex hull
+
+    Args:
+        hull: The hull we sample from
+        sample_size: How many points we sample. Defaults to 3.
+
+    Returns:
+        The sampled points
+    """
     return hull.squeeze()[np.random.choice(hull.shape[0], size=sample_size)]
 
 print(cv2.GaussianBlur(np.array([[0, 0, 0],

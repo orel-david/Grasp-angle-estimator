@@ -207,7 +207,7 @@ double angleFromOptical(const Point &p)
     int dx = p.x - 160; //width is 320
     int dy = p.y - 120; //height is 120
 
-    double dist = std::sqrt(dx*dx + dy*dy);
+    double dist = std::sqrt(dx*dx);
 
     return std::atan(dist / FOCAL_LENGTH) * sign(dx);
 }

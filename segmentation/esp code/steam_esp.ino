@@ -96,6 +96,25 @@ void startWiFi() {
   server.begin();
 }
 
+
+float getDist()
+{
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(10);
+
+  // Send a 10us pulse
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  // Measure echo pulse width
+  long duration = pulseIn(ECHO_PIN, HIGH);
+
+  // Calculate distance in cm (speed of sound: ~34300 cm/s)
+  return duration * 0.0343 / 2;
+}
+
+
 void handleClient() {
   WiFiClient client = server.available();
   if (!client) {
@@ -113,6 +132,13 @@ void handleClient() {
   client.println();
 
   while (client.connected()) {
+    if(getDist() < 5 || getDist() > 300)
+    {
+      Serial.println("Not in range");
+      delay(100);
+      continue;
+    }
+
 
     camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) {
@@ -139,8 +165,8 @@ void handleClient() {
 
     if (hulls.size() > 0) {
       Hull h = hulls[0];
-      Serial.println(h.getCenter().x);
-            Serial.println(h.getCenter().y);
+      // Serial.println(h.getCenter().x);
+      //       Serial.println(h.getCenter().y);
 
       Serial.print("Angle of object from center(radians): ");
       Serial.println(angleFromOptical(h.getCenter()));
@@ -186,6 +212,7 @@ void handleClient() {
     free(output);
     free(temp);
     esp_camera_fb_return(fb);
+
   }
 }
 
@@ -201,24 +228,5 @@ void setup() {
 }
 
 void loop() {
-  // digitalWrite(TRIG_PIN, LOW);
-  // delayMicroseconds(10);
-
-  // // Send a 10us pulse
-  // digitalWrite(TRIG_PIN, HIGH);
-  // delayMicroseconds(10);
-  // digitalWrite(TRIG_PIN, LOW);
-
-  // // Measure echo pulse width
-  // long duration = pulseIn(ECHO_PIN, HIGH);
-
-  // // Calculate distance in cm (speed of sound: ~34300 cm/s)
-  // float distance = duration * 0.0343 / 2;
-
-  // Serial.print("Distance: ");
-  // Serial.print(distance);
-  // Serial.println(" cm");
-
-
   handleClient();
 }
