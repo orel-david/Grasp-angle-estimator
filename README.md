@@ -3,7 +3,16 @@
 
 ## Code structure
 #### `segmentation`
-   *
+This folder contains the code for the segmentation algorithm that runs on the ESP32-CAM
+* #### `Python files`
+  `utils.py` contains the code we used for prototyping the algorithm. On the `classical_test.py` We checked the behaviour of the algorithm on the `./seq` and `./set` images to approximate how well it works.
+* #### `./segmentation/esp code`
+  This folder is where the c\cpp code that is meant to run on the ESP32-CAM. This code is build as follows:
+  * `hull.h` - Here is where the geometrical struct of `Point`, `Circle` and `Hull` are defined.
+  * `segment.h` - Here the segmentation algorithm is defined.
+  * `utils.h` - Here many utility function are defined for the preprocessing of the images.
+  * `stream_esp.ino` - In this file there is the debugging loop of the algorithm. It is possible to pass WIFI credentials, in order to view the image that is passed to the esp and segmented image. In the console it prints the time per frame and the recommended angle rotation. *note*: The streaming of the esp images impact the performence of the system.
+  * `segment_esp.ino` - This version does not stream the images and just prints the recommended rotation and time per frame. 
 
 ### `./high_computation_solutions`
 This folder has our code for experiments that can't directly run on the esp.<br />

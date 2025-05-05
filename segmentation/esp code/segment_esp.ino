@@ -5,9 +5,6 @@
 #include "fb_gfx.h"
 #include <cstring>
 
-// Replace with your network credentials
-const char* ssid = "OrelDavid";
-const char* password = "12345678";
 
 // Camera pin configuration (for AI Thinker module)
 #define PWDN_GPIO_NUM 32
@@ -83,18 +80,6 @@ void startCamera() {
   sensor->set_aec_value(sensor, 500);    // Manually set exposure value (0-1200)
 }
 
-void startWiFi() {
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nWiFi connected");
-  Serial.print("Camera Stream Ready! Visit: http://");
-  Serial.println(WiFi.localIP());
-
-  server.begin();
-}
 
 
 float getDist()
@@ -116,22 +101,7 @@ float getDist()
 
 
 void handleClient() {
-  WiFiClient client = server.available();
-  if (!client) {
-    return;
-  }
 
-  // Wait for the client to send a request
-  while (!client.available()) {
-    delay(1);
-  }
-
-  // Send HTTP headers for MJPEG streaming
-  client.println("HTTP/1.1 200 OK");
-  client.println("Content-Type: multipart/x-mixed-replace; boundary=frame");
-  client.println();
-
-  while (client.connected()) {
     if(getDist() < 5 || getDist() > 300)
     {
       Serial.println("Not in range");
@@ -146,8 +116,6 @@ void handleClient() {
       continue;
     }
 
-    uint8_t* jpg_buf = nullptr;
-    size_t jpg_buf_len = 0;
     int width = fb->width;
     int height = fb->height;
 
@@ -184,42 +152,16 @@ void handleClient() {
     }
     Serial.println("Execution Time: " + String(end_time - start_time) + " ms");
 
-    // Convert to JPEG if grayscale TODO REMOVE AFTER DEBUG
-    if (fb->format == PIXFORMAT_GRAYSCALE) {
-      if (!fmt2jpg(temp, 2 * fb->len, 2 * width, height, PIXFORMAT_GRAYSCALE, 80, &jpg_buf, &jpg_buf_len)) {
-        Serial.println("JPEG encoding failed");
-        esp_camera_fb_return(fb);
-        continue;
-      }
-    } else {
-      // Use the original JPEG buffer
-      jpg_buf = fb->buf;
-      jpg_buf_len = fb->len;
-    }
-
-    // Send the frame in MJPEG format
-    client.println("--frame");
-    client.println("Content-Type: image/jpeg");
-    client.println("Content-Length: " + String(jpg_buf_len));
-    client.println();
-    client.write(jpg_buf, jpg_buf_len);
-    client.println();
-
-    // Free the allocated buffer if grayscale conversion was done
-    if (fb->format == PIXFORMAT_GRAYSCALE) {
-      free(jpg_buf);
-    }
+    
     free(output);
     free(temp);
     esp_camera_fb_return(fb);
 
-  }
 }
 
 void setup() {
   Serial.begin(115200);
   startCamera();
-  startWiFi();
   Serial.println("hi");
   Serial.print("norm sanity check: ");
   Serial.println(norm(1, 2));
