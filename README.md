@@ -12,7 +12,8 @@ This folder contains the code for the segmentation algorithm that runs on the ES
   * `segment.h` - Here the segmentation algorithm is defined.
   * `utils.h` - Here many utility function are defined for the preprocessing of the images.
   * `stream_esp.ino` - In this file there is the debugging loop of the algorithm. It is possible to pass WIFI credentials, in order to view the image that is passed to the esp and segmented image. In the console it prints the time per frame and the recommended angle rotation. *note*: The streaming of the esp images impact the performence of the system.
-  * `segment_esp.ino` - This version does not stream the images and just prints the recommended rotation and time per frame. 
+  * `segment_esp.ino` - This version does not stream the images and just prints the recommended rotation and time per frame.
+  Note: in order to compile one of the .ino files it needs to be in a directory of the same name with header and cpp files. 
 
 ### `./high_computation_solutions`
 This folder has our code for experiments that can't directly run on the esp.<br />
