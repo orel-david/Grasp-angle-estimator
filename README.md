@@ -1,5 +1,8 @@
 # Project - 236874
+In this project, we aim to predict the rotation required for a robotic hand to grab an object using an ESP32-CAM and an ultrasonic sensor.
 
+## Our model pipeline
+![Image of our model pipeline](/images/Pipe.png)
 
 ## Code structure
 ### `./segmentation`
