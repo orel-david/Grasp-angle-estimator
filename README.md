@@ -4,6 +4,13 @@ In this project, we aim to predict the rotation required for a robotic hand to g
 ## Our model pipeline
 ![Image of our model pipeline](/images/Pipe.png)
 
+## Install
+> [!TIP]
+> For using the high_computation_solutions folder it is recommended to create a conda environment.
+```bash
+git clone https://github.com/orel-david/project-236874.git
+```
+
 ## Code structure
 ### `./segmentation`
 This folder contains the code for the segmentation algorithm that runs on the ESP32-CAM.
