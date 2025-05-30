@@ -13,8 +13,8 @@ git clone https://github.com/orel-david/project-236874.git
 
 ## Usage
 There are two options for running the algorithm on the system:
-* Segmentation in debug mode - By running `stream_esp.ino` after changing the WIFI credentials, the ESP would transmit the image it has captured along with the image's segmentation to a predetermined IP address. That is in addition to printing the required angle to terminal.
-* Segementation - By running `segment_esp.ino` the ESP would perform the segmentation algorithm on the captured image and output the required angle to the terminal. This option is better in terms of performence.
+* Segmentation in debug mode - Running `stream_esp.ino` would cause the ESP would transmit the image it has captured along with the image's segmentation to a predetermined IP address. That is in addition to printing the required angle to terminal. This option is more clear in terms of how to algorithm works, but in terms of performence it is slower and it require inserting WIFI credentials into the file after cloning.
+* Segementation - Running `segment_esp.ino` the ESP would perform the segmentation algorithm on the captured image and output the required angle to the terminal. This option is better in terms of performence.
 
 ## Code structure
 ### `./segmentation`
