@@ -1,9 +1,7 @@
 import cv2
-import matplotlib as mpl
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.widgets import Slider
 import os
 from scipy.spatial import ConvexHull
 

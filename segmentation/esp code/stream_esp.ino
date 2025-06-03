@@ -221,8 +221,6 @@ void setup() {
   startCamera();
   startWiFi();
   Serial.println("hi");
-  Serial.print("norm sanity check: ");
-  Serial.println(norm(1, 2));
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
 }

@@ -1,12 +1,5 @@
-import math
-
 import cv2
-import matplotlib as mpl
-import time
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.widgets import Slider
-import os
 from scipy.spatial import ConvexHull
 
 initial_sigma = 1
@@ -313,9 +306,10 @@ def sample_hull(hull, sample_size=3):
     """
     return hull.squeeze()[np.random.choice(hull.shape[0], size=sample_size)]
 
+
 print(cv2.GaussianBlur(np.array([[0, 0, 0],
-                  [0, 100, 0],
-                  [0, 0, 00]], dtype=np.uint8), (3, 3), 1))
+                                 [0, 100, 0],
+                                 [0, 0, 00]], dtype=np.uint8), (3, 3), 1))
 kernel = cv2.getGaussianKernel(3, 1.0)
 
 # Convert to 2D kernel by multiplying it by its transpose
