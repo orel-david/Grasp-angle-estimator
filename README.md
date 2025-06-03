@@ -1,4 +1,4 @@
-# Project - 236874
+# Grasp-angle-estimator
 In this project, we aim to predict the rotation required for a robotic hand to grab an object using an ESP32-CAM and an ultrasonic sensor.
 
 We have experimented with several methods to solve the following problem: <br />
@@ -25,14 +25,35 @@ We see this as a good approximation of the required rotation, since if the cente
 ## Our model pipeline
 ![Image of our model pipeline](/images/Pipe.png)
 
+## Requirements
+* ### ESP32-CAM:
+  * Arduino IDE: can be downloaded from the official website (https://www.arduino.cc/en/software/), we have used version 2.3.4
+  * esp32 board in the IDE: From the board manager search esp32 and download the version published by `Espressif Systems`. We have used version 3.07
+  
 ## Install
-> [!TIP]
-> For using the high_computation_solutions folder it is recommended to create a conda environment. 
-```bash
-git clone https://github.com/orel-david/project-236874.git
-```
 For running the ESP code you will need to go to the Arduino IDE, select board as `AI Thinker ESP32-CAM` and the board to which you are connected.<br />
 Then from the `.ino` file that you want to run select the upload button. After the upload is over reset the ESP from the reset button on the board and the code will start running.
+
+## Install – High Computation Solutions [Optional]
+> [!TIP]
+> It is recommended to use a **Conda environment** when working with the `high_computation_solutions` folder.
+
+```bash
+conda create --name grasp_angle_estimator python=3.10
+conda activate grasp_angle_estimator
+```
+
+```bash
+git clone https://github.com/orel-david/Grasp-angle-estimator.git
+cd Grasp-angle-estimator
+pip install -r requirements.txt
+```
+
+* Note - For using depth anything v2:
+    * Clone depth anything v2 repository (from https://github.com/DepthAnything/Depth-Anything-V2).
+    * Place the content of our depth anything directory inside the cloned "metric_depth" directory.
+    * Add their weights to the checkpoint directory (needed to be downlaoded from Depth-Anything-V2 readme Pre-trained Models section).
+    * Follow our depth anything/visualize_point_cloud.py instructions for running in the terminal.
 
 ## Usage
 There are two options for running the algorithm on the system:
@@ -73,25 +94,6 @@ This folder has our code for experiments that can't directly run on the esp.<br 
       After adding the ultrasonic sensor, less needed and doesn't worth the computational added cost.
 * #### `./high_computation_solutions/seq_images`
     * Contains several image sequences that demonstrate ESP video inputs.
-
-* Note - For using depth anything v2:
-    * Clone depth anything v2 repository.
-    * Place the content of our depth anything directory inside the cloned "metric_depth" directory.
-    * Add their weights to the checkpoint directory.
-    * Follow our depth anything/visualize_point_cloud.py instructions for running in the terminal.
-
-## Requirements
-* ### ESP32-CAM:
-  * Arduino IDE: can be downloaded from the official website, we have used version 2.3.4
-  * eso32 board in the IDE: From the board manager search esp32 and download the version published by `Espressif Systems`. We have used version 3.07
-  
-* ### Python code
-     The minimal versions are the ones we used and they can be installed with: <br /> `pip install (package)==(version)`.
-  * Python interpreter version >=3.10
-  * opencv version >= 4.10.0.84
-  * numpy version >= 1.24.3
-  * Scipy version >= 1.14.1
-  * matplotlib version >= 3.8.2
 
 ## Credits
 This project was intended to be a component in the robotic hand open-source project of Haifa3D, a non-profit organization, which can be viewed in the following repositories: <br />
